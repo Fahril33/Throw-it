@@ -34,7 +34,6 @@ export default function CopyButton(props: { text: string; title?: string }) {
       <span>
         <svg
           xmlSpace="preserve"
-          style={{ enableBackground: "new 0 0 512 512" }}
           viewBox="0 0 6.35 6.35"
           y="0"
           x="0"
@@ -53,7 +52,6 @@ export default function CopyButton(props: { text: string; title?: string }) {
         </svg>
         <svg
           xmlSpace="preserve"
-          style={{ enableBackground: "new 0 0 512 512" }}
           viewBox="0 0 24 24"
           y="0"
           x="0"

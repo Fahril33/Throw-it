@@ -12,6 +12,14 @@ export default defineConfig({
       "/api": {
         target: process.env.VITE_BACKEND_URL ?? "http://localhost:3000"
       }
-    }
+    },
+    allowedHosts: [
+      ".pinggy.io",
+      ".pinggy-free.link",
+      "serveo.net",
+      ".loca.lt",
+      ".ngrok-free.app",
+      ".trycloudflare.com"
+    ]
   }
 });
