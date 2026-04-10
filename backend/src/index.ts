@@ -260,7 +260,7 @@ io.on("connection", (socket) => {
       try {
         const buffer = Buffer.from(payload.data);
         const result = await transfers.writeChunk(payload.transferId, payload.index, buffer);
-        cb?.({ ok: true, ...result });
+        cb?.(result);
       } catch {
         cb?.({ ok: false, error: "CHUNK_FAILED" });
       }
