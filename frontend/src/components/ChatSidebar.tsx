@@ -1,7 +1,36 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import type { ChatMessage } from "../socket/types";
 import type { Socket } from "socket.io-client";
+import { copyText } from "../utils/clipboard";
+import LinkPreviewCard, { type LinkPreview } from "./LinkPreviewCard";
+import Toast from "./Toast";
+
+const urlRegex = /\bhttps?:\/\/[^\s<>()]+/gi;
+
+function extractFirstUrl(text: string) {
+  const m = text.match(urlRegex);
+  return m?.[0] ?? null;
+}
+
+function renderTextWithLinks(text: string) {
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  const matches = Array.from(text.matchAll(urlRegex));
+  for (const match of matches) {
+    const url = match[0];
+    const idx = match.index ?? 0;
+    if (idx > lastIndex) parts.push(text.slice(lastIndex, idx));
+    parts.push(
+      <a key={`${url}-${idx}`} href={url} target="_blank" rel="noreferrer">
+        {url}
+      </a>
+    );
+    lastIndex = idx + url.length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+}
 
 export default function ChatSidebar(props: {
   socket: Socket | null;
@@ -11,6 +40,10 @@ export default function ChatSidebar(props: {
   filterLabel: string;
 }) {
   const [text, setText] = useState("");
+  const [toast, setToast] = useState<string>("");
+  const [toastShow, setToastShow] = useState(false);
+  const previewCache = useRef(new Map<string, LinkPreview>());
+  const [, bumpPreview] = useState(0);
 
   const send = async () => {
     const t = text.trim();
@@ -25,6 +58,36 @@ export default function ChatSidebar(props: {
     const targetId = props.filter.deviceId;
     return sorted.filter((m) => m.fromDeviceId === targetId || m.fromDeviceId === props.meDeviceId);
   }, [sorted, props.filter, props.meDeviceId]);
+
+  useEffect(() => {
+    // Prefetch previews for messages containing URLs (first URL only).
+    const urls = shown
+      .map((m) => extractFirstUrl(m.text))
+      .filter((u): u is string => Boolean(u));
+
+    const unique = Array.from(new Set(urls)).slice(0, 20);
+    const toFetch = unique.filter((u) => !previewCache.current.has(u));
+    if (toFetch.length === 0) return;
+
+    let cancelled = false;
+    void (async () => {
+      for (const u of toFetch) {
+        try {
+          const res = await fetch(`/api/link-preview?url=${encodeURIComponent(u)}`);
+          const json = (await res.json()) as LinkPreview;
+          if (cancelled) return;
+          previewCache.current.set(u, json);
+          bumpPreview((x) => x + 1);
+        } catch {
+          // ignore
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shown]);
 
   return (
     <div className="panel rightPanel">
@@ -44,7 +107,30 @@ export default function ChatSidebar(props: {
           shown.map((m) => (
             <div className="chatMsg" key={m.id}>
               <div className="chatFrom">{m.fromDeviceName}</div>
-              <div className="chatText">{m.text}</div>
+              <div
+                className="chatText"
+                onDoubleClick={async () => {
+                  const url = extractFirstUrl(m.text);
+                  if (url) return; // don't copy if it contains URL (avoid accidental)
+                  const res = await copyText(m.text);
+                  if (res.ok) {
+                    setToast("Copied");
+                    setToastShow(true);
+                  } else {
+                    window.prompt("Copy:", m.text);
+                  }
+                }}
+                title={extractFirstUrl(m.text) ? undefined : "Double click untuk copy"}
+              >
+                {renderTextWithLinks(m.text)}
+                {(() => {
+                  const u = extractFirstUrl(m.text);
+                  if (!u) return null;
+                  const preview = previewCache.current.get(u);
+                  if (!preview) return null;
+                  return <LinkPreviewCard preview={preview} />;
+                })()}
+              </div>
             </div>
           ))
         )}
@@ -64,6 +150,15 @@ export default function ChatSidebar(props: {
           <Send size={18} color="white" />
         </button>
       </div>
+
+      <Toast
+        text={toast}
+        show={toastShow}
+        onDone={() => {
+          setToastShow(false);
+          setToast("");
+        }}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { getLanUrls } from "./utils/ip.js";
 import { logError, logInfo, logWarn } from "./logger.js";
 import { generateUniqueAutoName, isPlaceholderName, normalizeForCompare } from "./autoNames.js";
 import { deleteStoredFile, listStoredFiles, lookupStoredFile } from "./admin/files.js";
+import { getLinkPreview } from "./linkPreview.js";
 
 type HelloPayload = {
   deviceId: string;
@@ -35,6 +36,13 @@ app.use(express.json({ limit: "2mb" }));
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, name: "throwit-backend" });
+});
+
+app.get("/api/link-preview", async (req, res) => {
+  const url = String(req.query.url ?? "");
+  const preview = await getLinkPreview(url);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.json(preview);
 });
 
 app.get("/api/admin/files", async (_req, res) => {

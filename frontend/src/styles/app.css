@@ -43,6 +43,8 @@ button, input{ font-family: inherit; }
   border-bottom: 1px solid var(--border);
   background: rgba(9, 11, 16, 0.75);
   backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1;
 }
 
 .brand{
@@ -420,6 +422,34 @@ button, input{ font-family: inherit; }
 }
 .chatFrom{ color: var(--muted); font-size: 12px; font-weight: 800; }
 .chatText{ margin-top: 6px; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+
+.chatText a{
+  color: rgba(139,92,246,0.95);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.linkCard{
+  display:block;
+  margin-top: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+  padding: 10px;
+}
+.linkCard:hover{ background: rgba(0,0,0,0.24); }
+.linkCardTop{
+  display:flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.linkCardHost{ font-weight: 900; color: rgba(255,255,255,0.9); }
+.linkCardUrl{ font-size: 12px; color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.linkCardTitle{ margin-top: 6px; font-weight: 900; color: rgba(255,255,255,0.92); }
+.linkCardDesc{ margin-top: 6px; font-size: 12px; color: rgba(255,255,255,0.68); line-height: 1.45; }
+.linkCardImgWrap{ margin-top: 10px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.10); }
+.linkCardImg{ width: 100%; height: 160px; object-fit: cover; display:block; }
 .chatInputRow{
   padding: 12px;
   border-top: 1px solid var(--border);
@@ -456,7 +486,10 @@ button, input{ font-family: inherit; }
 .modalOverlay{
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  z-index: 10000;
+  background: rgba(0,0,0,0.76);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -466,10 +499,12 @@ button, input{ font-family: inherit; }
   width: min(560px, 100%);
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: rgba(15,20,32,0.92);
+  background: rgba(15,20,32,0.98);
   box-shadow: var(--shadow);
   padding: 0;
   overflow: hidden;
+  position: relative;
+  z-index: 10001;
 }
 .modalSm{ width: min(440px, 100%); }
 .modalMd{ width: min(560px, 100%); }
