@@ -1,6 +1,7 @@
 import path from "node:path";
 import http from "node:http";
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import cors from "cors";
 import { Server as SocketIOServer } from "socket.io";
@@ -32,6 +33,10 @@ type ChatMessage = {
 
 const app = express();
 app.use(cors());
+app.use((req, _res, next) => {
+  logInfo(`${req.method} ${req.url}`);
+  next();
+});
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/api/health", (_req, res) => {
@@ -308,7 +313,8 @@ async function start() {
   await ensureStorage();
 
   // Serve built frontend (optional). In dev, use Vite dev server.
-  const frontendDist = path.join(process.cwd(), "..", "frontend", "dist");
+  const baseDir = path.dirname(fileURLToPath(import.meta.url));
+  const frontendDist = path.resolve(baseDir, "..", "..", "frontend", "dist");
   let servingFrontend = false;
   try {
     const stat = await fs.stat(frontendDist);
