@@ -13,7 +13,9 @@ import {
   Send,
   SlidersHorizontal,
   Zap,
-  ShieldAlert
+  ShieldAlert,
+  Eye,
+  Sparkles
 } from "lucide-react";
 import HeaderBar from "./components/HeaderBar";
 import SidebarDevices from "./components/SidebarDevices";
@@ -38,6 +40,7 @@ function TransfersPanel(props: {
   onResumeUpload: (id: string) => void;
   onResumeDownload: (id: string) => void;
   onClear: () => void;
+  onPreview: (t: UiTransfer) => void;
 }) {
   const [mode, setMode] = useState<"sent" | "received" | "all">("all");
   const [spin, setSpin] = useState(false);
@@ -45,6 +48,7 @@ function TransfersPanel(props: {
   const [wrapName, setWrapName] = useState<Record<string, boolean>>({});
   const [dateFilter, setDateFilter] = useState<string>("");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [patchNotesOpen, setPatchNotesOpen] = useState(false);
 
   const historyLabel = mode === "sent" ? "Riwayat Dikirim" : mode === "received" ? "Riwayat Diterima" : "Semua Riwayat";
 
@@ -187,6 +191,13 @@ function TransfersPanel(props: {
                   ) : null}
                   <button
                     className="btn btnSmall"
+                    onClick={() => props.onPreview(t)}
+                    title="Preview File"
+                  >
+                    <Eye size={16} />
+                  </button>
+                  <button
+                    className="btn btnSmall"
                     onClick={() => setExpanded((p) => ({ ...p, [t.transferId]: !p[t.transferId] }))}
                     title="Detail"
                   >
@@ -230,7 +241,7 @@ function TransfersPanel(props: {
         )}
       </div>
 
-      <div style={{ padding: "0 14px 14px", color: "rgba(255,255,255,0.55)", fontSize: 12 }}>
+      <div style={{ padding: "0 14px 14px", color: "rgba(255,255,255,0.55)", fontSize: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ display: "inline-flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <span>
             <span style={{ display: "inline-block", width: 10, height: 10, borderLeft: "2px solid rgba(255,47,214,0.8)", marginRight: 6 }} />
@@ -241,6 +252,14 @@ function TransfersPanel(props: {
             Diterima
           </span>
         </span>
+        <button 
+          className="btn btnSmall" 
+          onClick={() => setPatchNotesOpen(true)}
+          style={{ background: "transparent", padding: "4px 8px", fontSize: 11 }}
+        >
+          <Sparkles size={14} style={{ marginRight: 4 }} />
+          Patch Notes
+        </button>
       </div>
 
       <Modal title="Filter Tanggal" open={filterOpen} onClose={() => setFilterOpen(false)}>
@@ -251,6 +270,32 @@ function TransfersPanel(props: {
           </button>
           <button className="btn btnPrimary btnSmall" onClick={() => setFilterOpen(false)}>
             Terapkan
+          </button>
+        </div>
+      </Modal>
+
+      <Modal title="Patch Notes" open={patchNotesOpen} onClose={() => setPatchNotesOpen(false)}>
+        <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, lineHeight: 1.6, maxHeight: "300px", overflowY: "auto", paddingRight: 4 }}>
+          <div style={{ marginBottom: 16 }}>
+            <h4 style={{ margin: "0 0 4px", color: "#fff" }}>v2.1.0 - File Preview & UI Enhancements</h4>
+            <ul style={{ margin: 0, paddingLeft: 18, color: "rgba(255,255,255,0.7)" }}>
+              <li><strong>Preview Area:</strong> Sekarang kamu dapat melihat preview (gambar, video, PDF) langsung dari panel baru yang tergabung pada chat. Klik ikon "Mata" pada riwayat transfer.</li>
+              <li><strong>Navigasi Cepat:</strong> Tab chat diperbarui agar lebih responsif terhadap perubahan dan mudah digunakan pada desktop.</li>
+              <li><strong>UI Footer:</strong> Menambahkan tombol Patch Notes baru untuk melihat pembaruan aplikasi secara langsung.</li>
+            </ul>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <h4 style={{ margin: "0 0 4px", color: "#fff" }}>v2.0.0 - Major Overhaul</h4>
+            <ul style={{ margin: 0, paddingLeft: 18, color: "rgba(255,255,255,0.7)" }}>
+              <li>Penambahan dukungan multi-device discovery secara real-time.</li>
+              <li>Perbaikan kestabilan transfer file peer-to-peer dan handling timeout.</li>
+              <li>Optimasi pengiriman file batch.</li>
+            </ul>
+          </div>
+        </div>
+        <div className="modalActions" style={{ marginTop: 12 }}>
+          <button className="btn btnPrimary btnSmall" onClick={() => setPatchNotesOpen(false)}>
+            Tutup
           </button>
         </div>
       </Modal>
@@ -273,6 +318,7 @@ function MainPanel(props: {
   onResumeUpload: (id: string) => void;
   onResumeDownload: (id: string) => void;
   onClearTransfers: () => void;
+  onPreview: (t: UiTransfer) => void;
 }) {
   const nav = useNavigate();
   const location = useLocation();
@@ -336,6 +382,7 @@ function MainPanel(props: {
                 onResumeUpload={props.onResumeUpload}
                 onResumeDownload={props.onResumeDownload}
                 onClear={props.onClearTransfers}
+                onPreview={props.onPreview}
               />
             </>
           }
@@ -353,8 +400,9 @@ export default function App() {
   const [selected, setSelected] = useState<Selected>({ type: "all" });
   const [mode, setMode] = useState<"fast" | "balanced">("balanced");
   const [deviceName, setDeviceName] = useState(getDeviceName() || "...");
+  const [previewItem, setPreviewItem] = useState<{ url: string; mimeType: string; name: string } | null>(null);
 
-  const { transfers, sendFiles, pause, download, resumeUpload, resumeDownload, clear, summary } = useTransfers(socket);
+  const { transfers, sendFiles, pause, download, resumeUpload, resumeDownload, clear, summary, getOutgoingFile } = useTransfers(socket);
   const isCompact = useMediaQuery("(max-width: 1100px)");
   const [mobileView, setMobileView] = useState<"send" | "devices" | "chat">("send");
   const [targetOpen, setTargetOpen] = useState(false);
@@ -425,6 +473,22 @@ export default function App() {
       }
     } finally {
       setServerFilesLoading(false);
+    }
+  };
+
+  const handlePreview = (t: UiTransfer) => {
+    let url = "";
+    if (t.direction === "out") {
+      const file = getOutgoingFile(t.transferId);
+      if (file) url = URL.createObjectURL(file);
+    } else if (t.toLabel === "Semua Perangkat") {
+      url = `/api/files/${t.transferId}/download`;
+    }
+
+    if (url) {
+      setPreviewItem({ url, mimeType: t.mimeType, name: t.fileName });
+    } else {
+      alert("File ini tidak tersedia untuk di-preview saat ini (Bukan file upload atau file server).");
     }
   };
 
@@ -522,6 +586,7 @@ export default function App() {
               onResumeUpload={resumeUpload}
               onResumeDownload={resumeDownload}
               onClearTransfers={clear}
+              onPreview={handlePreview}
             />
           )
         ) : (
@@ -548,6 +613,7 @@ export default function App() {
               onResumeUpload={resumeUpload}
               onResumeDownload={resumeDownload}
               onClearTransfers={clear}
+              onPreview={handlePreview}
             />
 
             <ChatSidebar
@@ -556,6 +622,8 @@ export default function App() {
               meDeviceId={deviceId}
               filter={selected}
               filterLabel={selected.type === "all" ? "Semua" : toLabel}
+              previewItem={previewItem}
+              onClearPreview={() => setPreviewItem(null)}
             />
           </>
         )}

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { Send, X, File as FileIcon } from "lucide-react";
 import type { ChatMessage } from "../socket/types";
 import type { Socket } from "socket.io-client";
 import { copyText } from "../utils/clipboard";
@@ -38,7 +38,10 @@ export default function ChatSidebar(props: {
   meDeviceId: string;
   filter: { type: "all" } | { type: "device"; deviceId: string };
   filterLabel: string;
+  previewItem?: { url: string; mimeType: string; name: string } | null;
+  onClearPreview?: () => void;
 }) {
+  const [tab, setTab] = useState<"chat" | "preview">("chat");
   const [text, setText] = useState("");
   const [toast, setToast] = useState<string>("");
   const [toastShow, setToastShow] = useState(false);
@@ -58,6 +61,12 @@ export default function ChatSidebar(props: {
     const targetId = props.filter.deviceId;
     return sorted.filter((m) => m.fromDeviceId === targetId || m.fromDeviceId === props.meDeviceId);
   }, [sorted, props.filter, props.meDeviceId]);
+
+  useEffect(() => {
+    if (props.previewItem) {
+      setTab("preview");
+    }
+  }, [props.previewItem]);
 
   useEffect(() => {
     // Prefetch previews for messages containing URLs (first URL only).
@@ -91,65 +100,154 @@ export default function ChatSidebar(props: {
 
   return (
     <div className="panel rightPanel">
-      <div className="panelHeader">
-        <div>
-          <div className="panelTitle">CHAT</div>
-          <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 12, fontWeight: 700, marginTop: 6 }}>
-            Filter: {props.filterLabel}
-          </div>
+      <div className="panelHeader" style={{ paddingBottom: 0 }}>
+        <div style={{ display: "flex", width: "100%", gap: 10 }}>
+          <button
+            onClick={() => setTab("chat")}
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              background: "transparent",
+              border: "none",
+              borderBottom: tab === "chat" ? "2px solid #fff" : "2px solid transparent",
+              color: tab === "chat" ? "#fff" : "rgba(255,255,255,0.55)",
+              fontWeight: "bold",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            CHAT {props.filterLabel !== "Semua" && `(${props.filterLabel})`}
+          </button>
+          <button
+            onClick={() => setTab("preview")}
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              background: "transparent",
+              border: "none",
+              borderBottom: tab === "preview" ? "2px solid #fff" : "2px solid transparent",
+              color: tab === "preview" ? "#fff" : "rgba(255,255,255,0.55)",
+              fontWeight: "bold",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            PREVIEW
+          </button>
         </div>
       </div>
 
-      <div className="chatBody">
-        {shown.length === 0 ? (
-          <div className="emptyState">Belum ada chat.</div>
-        ) : (
-          shown.map((m) => (
-            <div className="chatMsg" key={m.id}>
-              <div className="chatFrom">{m.fromDeviceName}</div>
+      {tab === "chat" ? (
+        <>
+          <div className="chatBody">
+            {shown.length === 0 ? (
+              <div className="emptyState">Belum ada chat.</div>
+            ) : (
+              shown.map((m) => (
+                <div className="chatMsg" key={m.id}>
+                  <div className="chatFrom">{m.fromDeviceName}</div>
+                  <div
+                    className="chatText"
+                    onDoubleClick={async () => {
+                      const url = extractFirstUrl(m.text);
+                      if (url) return; // don't copy if it contains URL (avoid accidental)
+                      const res = await copyText(m.text);
+                      if (res.ok) {
+                        setToast("Copied");
+                        setToastShow(true);
+                      } else {
+                        window.prompt("Copy:", m.text);
+                      }
+                    }}
+                    title={extractFirstUrl(m.text) ? undefined : "Double click untuk copy"}
+                  >
+                    {renderTextWithLinks(m.text)}
+                    {(() => {
+                      const u = extractFirstUrl(m.text);
+                      if (!u) return null;
+                      const preview = previewCache.current.get(u);
+                      if (!preview) return null;
+                      return <LinkPreviewCard preview={preview} />;
+                    })()}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="chatInputRow">
+            <input
+              className="chatInput"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Tulis pesan..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void send();
+              }}
+            />
+            <button className="sendBtn" onClick={() => void send()} title="Kirim">
+              <Send size={18} color="white" />
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="chatBody" style={{ display: "flex", flexDirection: "column", padding: 14 }}>
+          {props.previewItem ? (
+            <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
               <div
-                className="chatText"
-                onDoubleClick={async () => {
-                  const url = extractFirstUrl(m.text);
-                  if (url) return; // don't copy if it contains URL (avoid accidental)
-                  const res = await copyText(m.text);
-                  if (res.ok) {
-                    setToast("Copied");
-                    setToastShow(true);
-                  } else {
-                    window.prompt("Copy:", m.text);
-                  }
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingBottom: 10,
+                  borderBottom: "1px solid rgba(255,255,255,0.1)",
+                  marginBottom: 10
                 }}
-                title={extractFirstUrl(m.text) ? undefined : "Double click untuk copy"}
               >
-                {renderTextWithLinks(m.text)}
-                {(() => {
-                  const u = extractFirstUrl(m.text);
-                  if (!u) return null;
-                  const preview = previewCache.current.get(u);
-                  if (!preview) return null;
-                  return <LinkPreviewCard preview={preview} />;
-                })()}
+                <div style={{ fontWeight: 600, fontSize: 13, wordBreak: "break-all" }}>{props.previewItem.name}</div>
+                <button className="btn btnSmall" onClick={props.onClearPreview} title="Tutup Preview">
+                  <X size={16} />
+                </button>
+              </div>
+              <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {props.previewItem.mimeType.startsWith("image/") ? (
+                  <img
+                    src={props.previewItem.url}
+                    alt={props.previewItem.name}
+                    style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 8 }}
+                  />
+                ) : props.previewItem.mimeType.startsWith("video/") ? (
+                  // eslint-disable-next-line jsx-a11y/media-has-caption
+                  <video
+                    src={props.previewItem.url}
+                    controls
+                    style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: 8 }}
+                  />
+                ) : props.previewItem.mimeType === "application/pdf" ? (
+                  <iframe
+                    src={props.previewItem.url}
+                    title={props.previewItem.name}
+                    style={{ width: "100%", height: "100%", border: "none", borderRadius: 8, backgroundColor: "#fff" }}
+                  />
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.6)" }}>
+                    <FileIcon size={48} />
+                    <div style={{ textAlign: "center" }}>
+                      Preview tidak didukung untuk tipe file ini.<br/>
+                      <span style={{ fontSize: 12 }}>({props.previewItem.mimeType})</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          ))
-        )}
-      </div>
-
-      <div className="chatInputRow">
-        <input
-          className="chatInput"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Tulis pesan..."
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void send();
-          }}
-        />
-        <button className="sendBtn" onClick={() => void send()} title="Kirim">
-          <Send size={18} color="white" />
-        </button>
-      </div>
+          ) : (
+            <div className="emptyState" style={{ marginTop: 40 }}>
+              Tidak ada file yang dipilih untuk preview.<br /><br />
+              Klik tombol preview (icon mata) pada daftar transfer untuk melihat file.
+            </div>
+          )}
+        </div>
+      )}
 
       <Toast
         text={toast}

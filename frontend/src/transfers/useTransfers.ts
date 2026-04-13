@@ -93,6 +93,9 @@ export function useTransfers(socket: Socket | null) {
       { file: File; to: TransferTarget; toLabel: string; mode: "fast" | "balanced"; chunkSize: number; totalChunks: number }
     >()
   );
+  const getOutgoingFile = useCallback((transferId: string) => {
+    return outgoingFiles.current.get(transferId)?.file;
+  }, []);
   const incomingProgress = useRef(new Map<string, { nextIndex: number }>());
 
   useEffect(() => {
@@ -482,5 +485,5 @@ export function useTransfers(socket: Socket | null) {
     };
   }, [transfers]);
 
-  return { transfers, sendFiles, pause, download, resumeUpload, resumeDownload, clear, summary };
+  return { transfers, sendFiles, pause, download, resumeUpload, resumeDownload, clear, summary, getOutgoingFile };
 }

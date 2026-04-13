@@ -315,6 +315,8 @@ async function start() {
   // Serve built frontend (optional). In dev, use Vite dev server.
   const baseDir = path.dirname(fileURLToPath(import.meta.url));
   const frontendDist = path.resolve(baseDir, "..", "..", "frontend", "dist");
+  logInfo(`Checking for frontend at: ${frontendDist}`);
+  
   let servingFrontend = false;
   try {
     const stat = await fs.stat(frontendDist);
@@ -324,8 +326,8 @@ async function start() {
       app.use(express.static(frontendDist));
       app.get("*", (_req, res) => res.sendFile(path.join(frontendDist, "index.html")));
     }
-  } catch {
-    logWarn("No frontend build found (frontend/dist). Run `npm run build` for production mode.");
+  } catch (e) {
+    logWarn(`No frontend build found at ${frontendDist}. Run 'npm run build' in frontend/ to serve UI from backend.`);
   }
 
   server.listen(port, "0.0.0.0", () => {
