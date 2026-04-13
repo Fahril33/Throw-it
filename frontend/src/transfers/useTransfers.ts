@@ -360,7 +360,16 @@ export function useTransfers(socket: Socket | null) {
 
   const download = useCallback(
     async (transfer: UiTransfer) => {
-      if (!socket || !transfer.meta) return;
+      if (!socket || !transfer.meta) {
+        // Fallback: allow downloading stored file from server (works after refresh too).
+        const a = document.createElement("a");
+        a.href = `/api/files/${transfer.transferId}/download`;
+        a.download = transfer.fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        return;
+      }
       const transferId = transfer.transferId;
       const meta = transfer.meta;
       const controller = new AbortController();

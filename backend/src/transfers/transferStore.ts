@@ -4,6 +4,7 @@ import { createReadStream, createWriteStream } from "node:fs";
 import { STORAGE_DIR, SESSIONS_DIR, FILES_DIR } from "../constants.js";
 import { safeFilename } from "../utils/safeFilename.js";
 import { sha256File } from "../utils/sha256.js";
+import { effectiveMimeType } from "../utils/inferMime.js";
 import type { TransferMeta, TransferSession } from "./types.js";
 
 type FinalizedTransfer = TransferMeta & {
@@ -175,6 +176,7 @@ export class TransferStore {
 
     const sha256 = await sha256File(outPath);
     const finalizedMeta: FinalizedTransfer = { ...session, filePath: outPath, sha256 };
+    const mimeType = effectiveMimeType(session.mimeType, session.fileName);
     const metaPath = path.join(outDir, "meta.json");
     await fs.writeFile(
       metaPath,
@@ -183,7 +185,7 @@ export class TransferStore {
           transferId: session.transferId,
           fileName: session.fileName,
           fileSize: session.fileSize,
-          mimeType: session.mimeType,
+          mimeType,
           chunkSize: session.chunkSize,
           totalChunks: session.totalChunks,
           mode: session.mode,

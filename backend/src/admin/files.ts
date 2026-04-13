@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { FILES_DIR, SESSIONS_DIR, STORAGE_DIR } from "../constants.js";
+import { effectiveMimeType } from "../utils/inferMime.js";
 
 export type AdminStoredFile = {
   transferId: string;
@@ -63,10 +64,12 @@ export async function listStoredFiles(baseDir = path.join(process.cwd(), STORAGE
       const storedBytes = storedPath ? (await fs.stat(storedPath)).size : 0;
 
       totalBytes += storedBytes;
+      const fileName = meta.fileName ?? fileOnDisk ?? "file";
+      const nameForMime = fileOnDisk ?? fileName;
       items.push({
         transferId,
-        fileName: meta.fileName ?? fileOnDisk ?? "file",
-        mimeType: meta.mimeType ?? "application/octet-stream",
+        fileName,
+        mimeType: effectiveMimeType(meta.mimeType, nameForMime),
         fileSize: Number(meta.fileSize ?? storedBytes),
         storedBytes,
         createdAt: Number(meta.createdAt ?? 0),

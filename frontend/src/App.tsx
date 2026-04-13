@@ -41,6 +41,7 @@ function TransfersPanel(props: {
   onResumeDownload: (id: string) => void;
   onClear: () => void;
   onPreview: (t: UiTransfer) => void;
+  onLoadServerFiles: () => void;
 }) {
   const [mode, setMode] = useState<"sent" | "received" | "all">("all");
   const [spin, setSpin] = useState(false);
@@ -92,6 +93,10 @@ function TransfersPanel(props: {
           {historyLabel.toUpperCase()}
         </button>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button className="btn btnSmall" onClick={props.onLoadServerFiles} title="Lihat file di server (Semua)">
+            <RefreshCcw size={16} />
+            <span style={{ marginLeft: 6, fontSize: 11 }}>Server Files</span>
+          </button>
           <button className="btn btnSmall" onClick={() => setFilterOpen(true)} title="Filter tanggal">
             <Calendar size={16} />
           </button>
@@ -277,6 +282,15 @@ function TransfersPanel(props: {
       <Modal title="Patch Notes" open={patchNotesOpen} onClose={() => setPatchNotesOpen(false)}>
         <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, lineHeight: 1.6, maxHeight: "300px", overflowY: "auto", paddingRight: 4 }}>
           <div style={{ marginBottom: 16 }}>
+            <h4 style={{ margin: "0 0 4px", color: "#fff" }}>v2.1.1 - History & PDF Preview Fix</h4>
+            <ul style={{ margin: 0, paddingLeft: 18, color: "rgba(255,255,255,0.7)" }}>
+              <li><strong>Riwayat setelah refresh:</strong> Preview & download dari list riwayat tetap bisa (mengambil dari file server saat tersedia).</li>
+              <li><strong>PDF server:</strong> PDF akan di-preview inline via iframe (bukan langsung terunduh) jika server mengirim header yang sesuai.</li>
+              <li><strong>Muat file server:</strong> Opsi "Muat file dari server" dipindahkan dari popover "Pilih Target" ke area preview/riwayat (Server Files).</li>
+              <li><strong>Fallback aman:</strong> Jika tipe file/response tidak mendukung preview, area preview menampilkan pesan “Preview tidak didukung”.</li>
+            </ul>
+          </div>
+          <div style={{ marginBottom: 16 }}>
             <h4 style={{ margin: "0 0 4px", color: "#fff" }}>v2.1.0 - File Preview & UI Enhancements</h4>
             <ul style={{ margin: 0, paddingLeft: 18, color: "rgba(255,255,255,0.7)" }}>
               <li><strong>Preview Area:</strong> Sekarang kamu dapat melihat preview (gambar, video, PDF) langsung dari panel baru yang tergabung pada chat. Klik ikon "Mata" pada riwayat transfer.</li>
@@ -319,6 +333,8 @@ function MainPanel(props: {
   onResumeDownload: (id: string) => void;
   onClearTransfers: () => void;
   onPreview: (t: UiTransfer) => void;
+  onPreviewDirect: (url: string, mimeType: string, name: string) => void;
+  onLoadServerFiles: () => void;
 }) {
   const nav = useNavigate();
   const location = useLocation();
@@ -383,11 +399,12 @@ function MainPanel(props: {
                 onResumeDownload={props.onResumeDownload}
                 onClear={props.onClearTransfers}
                 onPreview={props.onPreview}
+                onLoadServerFiles={props.onLoadServerFiles}
               />
             </>
           }
         />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin" element={<Admin onPreview={props.onPreviewDirect} />} />
       </Routes>
     </div>
   );
@@ -413,6 +430,7 @@ export default function App() {
     {
       transferId: string;
       fileName: string;
+      mimeType?: string;
       fileSize: number;
       storedBytes: number;
       createdAt: number;
@@ -476,20 +494,82 @@ export default function App() {
     }
   };
 
-  const handlePreview = (t: UiTransfer) => {
-    let url = "";
-    if (t.direction === "out") {
-      const file = getOutgoingFile(t.transferId);
-      if (file) url = URL.createObjectURL(file);
-    } else if (t.toLabel === "Semua Perangkat") {
-      url = `/api/files/${t.transferId}/download`;
+  const handlePreviewDirect = (url: string, mimeType: string, name: string) => {
+    const finalUrl = url.includes("?") ? `${url}&inline=1` : `${url}?inline=1`;
+
+    void (async () => {
+      // Validate server headers first. If server forces download (attachment/octet-stream),
+      // show "preview not supported" instead of triggering an iframe download.
+      try {
+        const head = await fetch(finalUrl, { method: "HEAD" });
+        if (head.ok) {
+          const ct = (head.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+          const cd = (head.headers.get("content-disposition") ?? "").toLowerCase();
+          const looksDownload = cd.startsWith("attachment");
+          const effective = ct || mimeType || "application/octet-stream";
+          const previewable =
+            !looksDownload &&
+            (effective.startsWith("image/") ||
+              effective.startsWith("video/") ||
+              effective.startsWith("text/") ||
+              effective === "application/pdf");
+
+          if (previewable) {
+            setPreviewItem({ url: finalUrl, mimeType: effective, name });
+            return;
+          }
+        }
+      } catch {
+        // ignore and fall back
+      }
+
+      setPreviewItem({ url: "about:blank", mimeType: "application/octet-stream", name });
+    })();
+  };
+
+  const handlePreview = async (t: UiTransfer) => {
+    const serverUrl = `/api/files/${t.transferId}/download?inline=1`;
+
+    // Prefer server-backed preview for history items (survives refresh, fixes inline PDF headers).
+    if (t.status === "done" || t.status === "ready") {
+      try {
+        const head = await fetch(serverUrl, { method: "HEAD" });
+        if (head.ok) {
+          const ct = (head.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+          const cd = (head.headers.get("content-disposition") ?? "").toLowerCase();
+          const looksDownload = cd.startsWith("attachment");
+          const effective = ct || t.mimeType || "application/octet-stream";
+          const previewable =
+            !looksDownload &&
+            (effective.startsWith("image/") ||
+              effective.startsWith("video/") ||
+              effective.startsWith("text/") ||
+              effective === "application/pdf");
+
+          if (previewable) {
+            setPreviewItem({ url: serverUrl, mimeType: effective, name: t.fileName });
+            return;
+          }
+
+          // If server forces download, show unsupported message instead of iframe download.
+          setPreviewItem({ url: "about:blank", mimeType: "application/octet-stream", name: t.fileName });
+          return;
+        }
+      } catch {
+        // ignore and fall back
+      }
     }
 
-    if (url) {
-      setPreviewItem({ url, mimeType: t.mimeType, name: t.fileName });
-    } else {
-      alert("File ini tidak tersedia untuk di-preview saat ini (Bukan file upload atau file server).");
+    if (t.direction === "out") {
+      const file = getOutgoingFile(t.transferId);
+      if (file) {
+        const url = URL.createObjectURL(file);
+        setPreviewItem({ url, mimeType: t.mimeType, name: t.fileName });
+        return;
+      }
     }
+
+    alert("File ini tidak tersedia untuk di-preview saat ini.");
   };
 
   useEffect(() => {
@@ -587,6 +667,11 @@ export default function App() {
               onResumeDownload={resumeDownload}
               onClearTransfers={clear}
               onPreview={handlePreview}
+              onPreviewDirect={handlePreviewDirect}
+              onLoadServerFiles={async () => {
+                setServerFilesOpen(true);
+                await loadServerFiles();
+              }}
             />
           )
         ) : (
@@ -614,6 +699,11 @@ export default function App() {
               onResumeDownload={resumeDownload}
               onClearTransfers={clear}
               onPreview={handlePreview}
+              onPreviewDirect={handlePreviewDirect}
+              onLoadServerFiles={async () => {
+                setServerFilesOpen(true);
+                await loadServerFiles();
+              }}
             />
 
             <ChatSidebar
@@ -657,17 +747,6 @@ export default function App() {
             }}
           >
             Semua
-          </button>
-          <button
-            className="btn"
-            onClick={async () => {
-              setTargetOpen(false);
-              setServerFilesOpen(true);
-              await loadServerFiles();
-            }}
-            title="Lihat file yang tersimpan di server (untuk Semua)"
-          >
-            Muat file dari server
           </button>
           <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 800 }}>Perangkat Online</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 340, overflow: "auto" }}>
@@ -745,6 +824,16 @@ export default function App() {
                   </div>
                 </div>
                 <div className="rowActions">
+                  <button
+                    className="btn btnSmall"
+                    onClick={() => {
+                      setServerFilesOpen(false);
+                      handlePreviewDirect(`/api/files/${f.transferId}/download?inline=1`, f.mimeType ?? "application/octet-stream", f.fileName);
+                    }}
+                    title="Preview File"
+                  >
+                    <Eye size={16} />
+                  </button>
                   <a
                     className="btn btnSmall btnPrimary"
                     href={`/api/files/${f.transferId}/download`}

@@ -210,34 +210,83 @@ export default function ChatSidebar(props: {
                 </button>
               </div>
               <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {props.previewItem.mimeType.startsWith("image/") ? (
-                  <img
-                    src={props.previewItem.url}
-                    alt={props.previewItem.name}
-                    style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 8 }}
-                  />
-                ) : props.previewItem.mimeType.startsWith("video/") ? (
-                  // eslint-disable-next-line jsx-a11y/media-has-caption
-                  <video
-                    src={props.previewItem.url}
-                    controls
-                    style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: 8 }}
-                  />
-                ) : props.previewItem.mimeType === "application/pdf" ? (
-                  <iframe
-                    src={props.previewItem.url}
-                    title={props.previewItem.name}
-                    style={{ width: "100%", height: "100%", border: "none", borderRadius: 8, backgroundColor: "#fff" }}
-                  />
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.6)" }}>
-                    <FileIcon size={48} />
-                    <div style={{ textAlign: "center" }}>
-                      Preview tidak didukung untuk tipe file ini.<br/>
-                      <span style={{ fontSize: 12 }}>({props.previewItem.mimeType})</span>
+                {(() => {
+                  const url = props.previewItem.url;
+                  const name = props.previewItem.name;
+                  const mimeType = props.previewItem.mimeType;
+                  const isBlobUrl = url.startsWith("blob:");
+
+                  if (mimeType.startsWith("image/")) {
+                    return (
+                      <img
+                        src={url}
+                        alt={name}
+                        style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 8 }}
+                      />
+                    );
+                  }
+
+                  if (mimeType.startsWith("video/")) {
+                    // eslint-disable-next-line jsx-a11y/media-has-caption
+                    return <video src={url} controls style={{ maxWidth: "100%", maxHeight: "100%", borderRadius: 8 }} />;
+                  }
+
+                  const isPdf = mimeType === "application/pdf" || (isBlobUrl && name.toLowerCase().endsWith(".pdf"));
+                  if (isPdf) {
+                    return (
+                      <iframe
+                        src={url}
+                        title={name}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          border: "none",
+                          borderRadius: 8,
+                          backgroundColor: "#fff",
+                          minHeight: "500px"
+                        }}
+                      />
+                    );
+                  }
+
+                  const isText = mimeType.startsWith("text/") || (isBlobUrl && name.toLowerCase().endsWith(".txt"));
+                  if (isText) {
+                    return (
+                      <iframe
+                        src={url}
+                        title={name}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          border: "none",
+                          borderRadius: 8,
+                          backgroundColor: "#f9f9f9",
+                          padding: 10,
+                          minHeight: "500px"
+                        }}
+                      />
+                    );
+                  }
+
+                  return (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 10,
+                        color: "rgba(255,255,255,0.6)"
+                      }}
+                    >
+                      <FileIcon size={48} />
+                      <div style={{ textAlign: "center" }}>
+                        Preview tidak didukung untuk tipe file ini.
+                        <br />
+                        <span style={{ fontSize: 12 }}>({mimeType})</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           ) : (

@@ -15,7 +15,9 @@ type AdminItem = {
   sha256?: string;
 };
 
-export default function Admin() {
+import { Eye } from "lucide-react";
+
+export default function Admin(props: { onPreview: (url: string, mimeType: string, name: string) => void }) {
   const [items, setItems] = useState<AdminItem[]>([]);
   const [totalBytes, setTotalBytes] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -203,6 +205,13 @@ export default function Admin() {
                     </div>
                   </div>
                   <div className="rowActions">
+                    <button
+                      className="btn btnSmall"
+                      onClick={() => props.onPreview(`/api/files/${it.transferId}/download?inline=1`, it.mimeType, it.fileName)}
+                      title="Preview File"
+                    >
+                      <Eye size={16} />
+                    </button>
                     <CopyButton text={it.fileName} title="Copy nama file" />
                     {!selectEnabled ? (
                       <button className="btn btnSmall btnDanger" onClick={() => void remove(it.transferId)}>

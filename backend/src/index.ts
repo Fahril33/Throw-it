@@ -14,6 +14,7 @@ import { logError, logInfo, logWarn } from "./logger.js";
 import { generateUniqueAutoName, isPlaceholderName, normalizeForCompare } from "./autoNames.js";
 import { deleteStoredFile, listStoredFiles, lookupStoredFile } from "./admin/files.js";
 import { getLinkPreview } from "./linkPreview.js";
+import { effectiveMimeType } from "./utils/inferMime.js";
 
 type HelloPayload = {
   deviceId: string;
@@ -89,11 +90,13 @@ app.get("/api/files/:transferId/download", async (req, res) => {
     return;
   }
 
-  // Force download; never auto-execute/open.
   const safeName = lookup.meta.fileName.replace(/[\r\n"]/g, "_");
+  const isInline = req.query.inline === "1";
+  const inlineMimeType = effectiveMimeType(lookup.meta.mimeType, lookup.fileNameOnDisk || lookup.meta.fileName);
+
   res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("Content-Type", "application/octet-stream");
-  res.setHeader("Content-Disposition", `attachment; filename="${safeName}"`);
+  res.setHeader("Content-Type", isInline ? inlineMimeType : "application/octet-stream");
+  res.setHeader("Content-Disposition", `${isInline ? "inline" : "attachment"}; filename="${safeName}"`);
   res.setHeader("Content-Length", String(lookup.meta.storedBytes));
   res.sendFile(lookup.filePath);
 });
