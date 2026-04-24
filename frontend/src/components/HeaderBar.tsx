@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { Pencil } from "lucide-react";
+import { ChevronDown, Pencil, Send } from "lucide-react";
 import Modal from "./Modal";
 import { setDeviceName, getDeviceName } from "../storage/local";
 
@@ -9,6 +9,12 @@ export default function HeaderBar(props: {
   onRename: (name: string) => void;
   onOpenAdmin: () => void;
   onGoHome: () => void;
+  targetLabel: string;
+  onPickTarget: () => void;
+  mode: "fast" | "balanced";
+  onModeChange: (m: "fast" | "balanced") => void;
+  isAdminRoute: boolean;
+  compact: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(props.deviceName);
@@ -25,6 +31,7 @@ export default function HeaderBar(props: {
   return (
     <>
       <div className="header">
+        <div className="headerLeft">
         <div
           className="brand"
           style={{ userSelect: "none" }}
@@ -100,6 +107,35 @@ export default function HeaderBar(props: {
             ) : null}
           </div>
           <div className="brandName">ThrowIt</div>
+        </div>
+        </div>
+
+        <div className="headerCenter">
+          {!props.compact ? (
+            <button className="targetBtn headerTargetBtn" onClick={props.onPickTarget} title="Pilih target">
+              <Send size={16} color="rgba(255,255,255,0.85)" />
+              <div className="targetText">{props.targetLabel}</div>
+              <ChevronDown size={16} color="rgba(255,255,255,0.6)" />
+            </button>
+          ) : null}
+
+          <div className="seg modeSeg" title="Mode transfer">
+            <button className={props.mode === "fast" ? "active" : ""} onClick={() => props.onModeChange("fast")}>
+              Fast
+            </button>
+            <button className={props.mode === "balanced" ? "active" : ""} onClick={() => props.onModeChange("balanced")}>
+              Balanced
+            </button>
+          </div>
+
+          {props.isAdminRoute ? (
+            <div className="seg adminSeg" title="Admin">
+              <button className="active" onClick={props.onOpenAdmin}>
+                Admin
+              </button>
+              <button onClick={props.onGoHome}>Kembali</button>
+            </div>
+          ) : null}
         </div>
 
         <div className="headerRight">

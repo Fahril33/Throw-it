@@ -24,13 +24,25 @@ export function useThrowItSocket() {
   const deviceToken = useMemo(() => getOrCreateDeviceToken(), []);
 
   useEffect(() => {
-    const socket = io({
+    const backendUrl =
+      (import.meta as any).env?.VITE_BACKEND_URL ||
+      ((import.meta as any).env?.DEV ? `${window.location.protocol}//${window.location.hostname}:3000` : "");
+
+    const socket = backendUrl
+      ? io(backendUrl, {
+          path: "/socket.io",
+          transports: ["websocket"],
+          autoConnect: true,
+          reconnection: true,
+          reconnectionDelayMax: 2000
+        })
+      : io({
       path: "/socket.io",
       transports: ["websocket"],
       autoConnect: true,
       reconnection: true,
       reconnectionDelayMax: 2000
-    });
+      });
     socketRef.current = socket;
 
     const hello = () => {

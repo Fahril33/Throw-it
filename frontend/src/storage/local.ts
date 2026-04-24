@@ -27,7 +27,7 @@ export type TransferHistoryItem = {
   mode: "fast" | "balanced";
   createdAt: number;
   finishedAt?: number;
-  status: "ready" | "done" | "error";
+  status: "ready" | "done" | "error" | "canceled";
   error?: string;
   meta?: any;
 };
