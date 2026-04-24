@@ -24,9 +24,7 @@ export function useThrowItSocket() {
   const deviceToken = useMemo(() => getOrCreateDeviceToken(), []);
 
   useEffect(() => {
-    const backendUrl =
-      (import.meta as any).env?.VITE_BACKEND_URL ||
-      ((import.meta as any).env?.DEV ? `${window.location.protocol}//${window.location.hostname}:3000` : "");
+    const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || "";
 
     const socket = backendUrl
       ? io(backendUrl, {
