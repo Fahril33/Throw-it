@@ -48,6 +48,7 @@ export default function ChatSidebar(props: {
   const [toastShow, setToastShow] = useState(false);
   const previewCache = useRef(new Map<string, LinkPreview>());
   const [, bumpPreview] = useState(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const send = async () => {
     const t = text.trim();
@@ -98,6 +99,12 @@ export default function ChatSidebar(props: {
       cancelled = true;
     };
   }, [shown]);
+
+  useEffect(() => {
+    if (tab === "chat") {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [shown, tab]);
 
   return (
     <div className="panel rightPanel">
@@ -175,6 +182,7 @@ export default function ChatSidebar(props: {
                 </div>
               ))
             )}
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="chatInputRow">
@@ -183,6 +191,7 @@ export default function ChatSidebar(props: {
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Tulis pesan..."
+              autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") void send();
               }}
