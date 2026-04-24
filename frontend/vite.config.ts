@@ -7,11 +7,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/socket.io": {
-        target: process.env.VITE_BACKEND_URL ?? "http://localhost:3001",
+        target: process.env.VITE_BACKEND_URL ?? "http://localhost:3010",
         ws: true
       },
       "/api": {
-        target: process.env.VITE_BACKEND_URL ?? "http://localhost:3001"
+        target: process.env.VITE_BACKEND_URL ?? "http://localhost:3010"
       }
     },
     allowedHosts: [

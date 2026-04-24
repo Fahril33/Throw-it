@@ -81,18 +81,18 @@ export function useThrowItSocket() {
           osc.connect(gain);
           gain.connect(ctx.destination);
           
-          osc.type = "sine";
+          osc.type = "square";
           osc.frequency.setValueAtTime(880, ctx.currentTime); // Pitch A5
           osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1); // Slide up
           
-          gain.gain.setValueAtTime(0.9, ctx.currentTime); // Volume
+          gain.gain.setValueAtTime(9.9, ctx.currentTime); // Volume
           gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3); // Fade out
           
           osc.start(ctx.currentTime);
           osc.stop(ctx.currentTime + 0.3);
         } catch (e) {}
       }
-    });
+    }); 
 
     socket.on("transfer:available", (meta: TransferMeta) => {
       setState((s) => ({ ...s, incoming: [meta, ...s.incoming] }));
