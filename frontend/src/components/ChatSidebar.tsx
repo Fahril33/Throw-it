@@ -38,6 +38,7 @@ export default function ChatSidebar(props: {
   meDeviceId: string;
   filter: { type: "all" } | { type: "device"; deviceId: string };
   filterLabel: string;
+  headerTop?: React.ReactNode;
   previewItem?: { url: string; mimeType: string; name: string } | null;
   onClearPreview?: () => void;
 }) {
@@ -100,7 +101,8 @@ export default function ChatSidebar(props: {
 
   return (
     <div className="panel rightPanel">
-      <div className="panelHeader" style={{ paddingBottom: 0 }}>
+      <div className={`panelHeader ${props.headerTop ? "panelHeaderStack" : ""}`} style={{ paddingBottom: 0 }}>
+        {props.headerTop}
         <div style={{ display: "flex", width: "100%", gap: 10 }}>
           <button
             onClick={() => setTab("chat")}

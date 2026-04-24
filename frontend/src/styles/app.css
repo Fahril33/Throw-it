@@ -13,10 +13,13 @@
   --radius: 14px;
   --radius-sm: 10px;
   --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  --scroll-thumb: rgba(255,255,255,0.16);
+  --scroll-thumb-hover: rgba(255,255,255,0.26);
 }
 
 *{ box-sizing: border-box; }
 html,body{ height: 100%; }
+#root{ height: 100%; }
 body{
   margin:0;
   font-family: var(--font);
@@ -24,7 +27,24 @@ body{
               radial-gradient(1000px 700px at 85% 10%, rgba(139,92,246,0.10), transparent 55%),
               var(--bg);
   color: var(--text);
+  overflow: hidden;
 }
+
+/* Scrollbar */
+*{
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+*::-webkit-scrollbar{ width: 10px; height: 10px; }
+*::-webkit-scrollbar-track{ background: transparent; }
+*::-webkit-scrollbar-thumb{
+  background-color: var(--scroll-thumb);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover{ background-color: var(--scroll-thumb-hover); }
+*::-webkit-scrollbar-corner{ background: transparent; }
 
 a{ color: inherit; text-decoration: none; }
 button, input{ font-family: inherit; }
@@ -33,18 +53,38 @@ button, input{ font-family: inherit; }
   height: 100%;
   display: grid;
   grid-template-rows: 56px 1fr;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .header{
   display:flex;
   align-items:center;
   justify-content: space-between;
+  gap: 12px;
   padding: 0 16px;
   border-bottom: 1px solid var(--border);
   background: rgba(9, 11, 16, 0.75);
   backdrop-filter: blur(10px);
   position: relative;
   z-index: 1;
+  min-width: 0;
+}
+
+.headerLeft{ display:flex; align-items:center; flex: 0 0 auto; }
+.headerCenter{
+  display:flex;
+  align-items:center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.headerTargetBtn{
+  flex: 0 0 auto;
+  width: fit-content;
+  max-width: 320px;
 }
 
 .brand{
@@ -103,6 +143,7 @@ button, input{ font-family: inherit; }
   display:flex;
   align-items:center;
   gap: 12px;
+  flex: 0 0 auto;
 }
 
 .pill{
@@ -164,6 +205,27 @@ button, input{ font-family: inherit; }
   gap: 10px;
   border-bottom: 1px solid var(--border);
 }
+.panelHeaderStack{
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+}
+.panelHeaderRow{
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+}
+.panelNavRow{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex: 0 0 auto;
+  width: fit-content;
+  margin-left: auto;
+  align-self: flex-end;
+}
 .panelTitle{
   font-size: 13px;
   color: var(--muted);
@@ -179,6 +241,10 @@ button, input{ font-family: inherit; }
   padding: 10px 12px;
   border-radius: 12px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 .btn:hover{ background: rgba(255,255,255,0.06); }
 .btnPrimary{
@@ -201,6 +267,73 @@ button, input{ font-family: inherit; }
   overflow:auto;
   flex: 1;
   min-height: 0;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.devicesQueueGrid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: start;
+  max-height: 520px;
+}
+.devicesQueueSection{
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.14);
+  border-radius: 14px;
+  overflow: hidden;
+  display:flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.devicesQueueHeader{
+  padding: 10px 10px;
+  display:flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.devicesQueueTitle{
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+.devicesQueueBody{
+  padding: 10px 10px;
+  overflow: auto;
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  max-height: 440px;
+}
+.queueItemRow{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  padding: 8px 8px;
+}
+.queueItemName{
+  font-weight: 800;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.queueItemMeta{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
 }
 .deviceItem{
   display:flex;
@@ -248,6 +381,18 @@ button, input{ font-family: inherit; }
   gap: 12px;
   border-bottom: 1px solid var(--border);
 }
+.mainBody{
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.homeStack{
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .sendTo{
   display:flex;
   align-items:center;
@@ -268,6 +413,7 @@ button, input{ font-family: inherit; }
   border: 1px solid var(--border);
   border-radius: 999px;
   overflow: hidden;
+  min-width: 0;
 }
 .seg button{
   border: none;
@@ -277,11 +423,14 @@ button, input{ font-family: inherit; }
   cursor:pointer;
   font-weight: 700;
   font-size: 13px;
+  min-width: 0;
 }
 .seg button.active{
   background: rgba(139,92,246,0.18);
   color: var(--text);
 }
+
+.segFull{ width: 100%; }
 
 .dropZone{
   margin: 0;
@@ -326,6 +475,13 @@ button, input{ font-family: inherit; }
   align-items:center;
   justify-content: space-between;
 }
+.historyWrap{
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
 .historyTitle{
   font-size: 13px;
   color: var(--muted);
@@ -341,7 +497,8 @@ button, input{ font-family: inherit; }
   gap: 10px;
   min-height: 0;
   flex: 1;
-  max-height: 100vh;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 .transferRow{
   border: 1px solid var(--border);
@@ -412,6 +569,8 @@ button, input{ font-family: inherit; }
   flex-direction: column;
   gap: 10px;
   min-height: 0;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 .chatMsg{
   border: 1px solid var(--border);
@@ -537,10 +696,15 @@ button, input{ font-family: inherit; }
   padding: 14px;
   max-height: min(70vh, 720px);
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 .modalFooter{
   padding: 12px 14px;
   border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 .modalActions{ display:flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
 .input{
@@ -591,6 +755,7 @@ button, input{ font-family: inherit; }
   grid-template-columns: 1fr 64px;
   gap: 10px;
   min-height: 0;
+  overflow: hidden;
 }
 .pasteBtn{
   height: 100%;
@@ -610,27 +775,56 @@ button, input{ font-family: inherit; }
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
   }
-  .mobileNav{
-    display:flex;
-    justify-content:center;
-    padding: 4px 0;
-  }
+  .header{ padding: 8px 12px; }
+  .headerCenter{ justify-content: flex-start; }
+  .headerTargetBtn{ display:none; }
+  .modeSeg button{ padding: 7px 10px; font-size: 12px; }
+  .adminSeg{ display:none; }
   .sendRow{ grid-template-columns: 1fr 56px; }
+  .sendRow{ height: clamp(120px, 18vh, 180px); }
+  .dropZone{ padding: 14px; }
+  .folderIcon{ width: 42px; height: 42px; }
+  .dropTitle{ font-size: 18px; }
+  .dropSub{ font-size: 11px; }
   .pasteBtn{ width: 56px; }
+  .devicesQueueGrid{
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+  .devicesQueueBody{
+    max-height: 320px;
+  }
+  .panelNavRow{
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    align-self: center;
+  }
+}
+
+@media (max-width: 420px){
+  .brandName{ display:none; }
+  .headerRight{ gap: 8px; }
+  .pill{ padding: 6px 8px; gap: 8px; }
+  .statusText{ display:none; }
+  .deviceNameBtn{ max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 /* Admin checkbox (scoped) */
-.adminList .container {
+.adminList .container,
+.historyList .container {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
 }
 
-.adminList .container input {
+.adminList .container input,
+.historyList .container input {
   display: none;
 }
 
-.adminList .container svg {
+.adminList .container svg,
+.historyList .container svg {
   overflow: visible;
   width: 1.15em;
   height: 1.15em;
@@ -640,7 +834,8 @@ button, input{ font-family: inherit; }
   user-select: none;
 }
 
-.adminList .path {
+.adminList .path,
+.historyList .path {
   fill: none;
   stroke: white;
   stroke-width: 6;
@@ -651,7 +846,8 @@ button, input{ font-family: inherit; }
   stroke-dashoffset: 0;
 }
 
-.adminList .container input:checked ~ svg .path {
+.adminList .container input:checked ~ svg .path,
+.historyList .container input:checked ~ svg .path {
   stroke-dasharray: 70.5096664428711 9999999;
   stroke-dashoffset: -262.2723388671875;
 }
