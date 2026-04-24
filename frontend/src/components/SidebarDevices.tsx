@@ -77,8 +77,11 @@ export default function SidebarDevices(props: {
                       {props.onCancelTransfer ? (
                         <button
                           className="btn btnSmall btnDanger"
-                          onClick={() => props.onCancelTransfer?.(t.transferId)}
-                          title="Cancel"
+                          onClick={() => {
+                            if (!window.confirm("Batalkan transfer ini?")) return;
+                            props.onCancelTransfer?.(t.transferId);
+                          }}
+                          title="Batalkan transfer ini"
                         >
                           <X size={16} />
                         </button>

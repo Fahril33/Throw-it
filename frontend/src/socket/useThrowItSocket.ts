@@ -25,8 +25,7 @@ export function useThrowItSocket() {
 
   useEffect(() => {
     const backendUrl =
-      (import.meta as any).env?.VITE_BACKEND_URL ||
-      ((import.meta as any).env?.DEV ? `${window.location.protocol}//${window.location.hostname}:3000` : "");
+      (import.meta as any).env?.VITE_BACKEND_URL || "";
 
     const socket = backendUrl
       ? io(backendUrl, {

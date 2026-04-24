@@ -474,6 +474,8 @@ button, input{ font-family: inherit; }
   display:flex;
   align-items:center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .historyWrap{
   display: flex;

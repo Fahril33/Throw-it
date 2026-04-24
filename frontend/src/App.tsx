@@ -120,7 +120,7 @@ function TransfersPanel(props: {
           </span>
           {historyLabel.toUpperCase()}
         </button>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
           <button className="btn btnSmall" onClick={props.onLoadServerFiles} title="Lihat file di server (Semua)">
             <List size={16} />
             <span style={{ fontSize: 11 }}>Server Files</span>
@@ -316,7 +316,14 @@ function TransfersPanel(props: {
                     </button>
                   ) : null}
                   {t.status === "queued" || t.status === "transferring" || t.status === "finalizing" || t.status === "paused" ? (
-                    <button className="btn btnSmall btnDanger" onClick={() => props.onCancel(t.transferId)} title="Cancel">
+                    <button 
+                      className="btn btnSmall btnDanger" 
+                      onClick={() => {
+                        if (!window.confirm("Batalkan transfer ini?")) return;
+                        props.onCancel(t.transferId);
+                      }} 
+                      title="Batalkan transfer ini"
+                    >
                       <X size={16} />
                     </button>
                   ) : null}
@@ -383,6 +390,7 @@ function TransfersPanel(props: {
             Diterima
           </span>
         </span>
+        <span style={{ fontWeight: 600 }}>Total File: {transfersSorted.length}</span>
         <button 
           className="btn btnSmall" 
           onClick={() => setPatchNotesOpen(true)}
