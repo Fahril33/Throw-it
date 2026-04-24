@@ -29,18 +29,18 @@ export function useThrowItSocket() {
 
     const socket = backendUrl
       ? io(backendUrl, {
-          path: "/socket.io",
-          transports: ["websocket"],
-          autoConnect: true,
-          reconnection: true,
-          reconnectionDelayMax: 2000
-        })
+        path: "/socket.io",
+        transports: ["websocket"],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionDelayMax: 2000
+      })
       : io({
-      path: "/socket.io",
-      transports: ["websocket"],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionDelayMax: 2000
+        path: "/socket.io",
+        transports: ["websocket"],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionDelayMax: 2000
       });
     socketRef.current = socket;
 
@@ -82,7 +82,7 @@ export function useThrowItSocket() {
 
     socket.on("chat:new", (msg: ChatMessage) => {
       setState((s) => ({ ...s, chat: [...s.chat, msg].slice(-200) }));
-      
+
       // Play sound notification if message is from someone else
       if (msg.fromDeviceId !== deviceId) {
         try {
@@ -91,19 +91,19 @@ export function useThrowItSocket() {
           const gain = ctx.createGain();
           osc.connect(gain);
           gain.connect(ctx.destination);
-          
+
           osc.type = "square";
           osc.frequency.setValueAtTime(880, ctx.currentTime); // Pitch A5
           osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1); // Slide up
-          
+
           gain.gain.setValueAtTime(9.9, ctx.currentTime); // Volume
           gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3); // Fade out
-          
+
           osc.start(ctx.currentTime);
           osc.stop(ctx.currentTime + 0.3);
-        } catch (e) {}
+        } catch (e) { }
       }
-    }); 
+    });
 
     socket.on("transfer:available", (meta: TransferMeta) => {
       setState((s) => ({ ...s, incoming: [meta, ...s.incoming] }));
